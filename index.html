@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ListLode — Turn supplier price lists into Amazon winners</title>
+<meta name="description" content="Upload any wholesale price list. ListLode matches every UPC to Amazon, pulls live prices and real fees, and returns the products worth selling. $19.99/month, unlimited scans.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1a1d21;
+    --paper:#fafaf7;
+    --gold:#c79a2a;
+    --gold-soft:#f6edd7;
+    --green:#1f6f4a;
+    --dim:#8a8f94;
+    --rule:#e3e1da;
+    --maxw:1060px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);color:var(--ink);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .display{font-family:"Bricolage Grotesque",sans-serif}
+  .mono{font-family:"IBM Plex Mono",monospace}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+
+  /* header */
+  header{border-bottom:1px solid var(--rule)}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0}
+  .logo{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:22px;letter-spacing:-.02em;text-decoration:none;color:var(--ink)}
+  .logo b{color:var(--gold)}
+  .nav a.cta{font-size:14px;font-weight:600;color:var(--ink);text-decoration:none;border:1.5px solid var(--ink);padding:8px 16px;border-radius:4px}
+  .nav a.cta:hover{background:var(--ink);color:var(--paper)}
+
+  /* hero */
+  .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;padding:72px 0 80px}
+  .hero h1{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:clamp(34px,4.6vw,52px);line-height:1.08;letter-spacing:-.025em}
+  .hero h1 em{font-style:normal;color:var(--gold)}
+  .hero p.sub{margin:20px 0 8px;font-size:18px;color:#3d4147;max-width:46ch}
+  .price-line{font-family:"IBM Plex Mono",monospace;font-size:14px;font-weight:600;margin:18px 0 26px;color:var(--ink)}
+  .price-line span{color:var(--dim);font-weight:400}
+
+  form.capture{display:flex;gap:10px;max-width:440px}
+  form.capture input{
+    flex:1;padding:13px 14px;font-size:15px;border:1.5px solid var(--ink);
+    border-radius:4px;background:#fff;color:var(--ink);font-family:inherit;
+  }
+  form.capture input:focus{outline:2px solid var(--gold);outline-offset:1px}
+  form.capture button{
+    padding:13px 22px;font-size:15px;font-weight:700;border:none;border-radius:4px;
+    background:var(--ink);color:var(--paper);cursor:pointer;font-family:inherit;white-space:nowrap;
+  }
+  form.capture button:hover{background:#000}
+  .capture-note{font-size:13px;color:var(--dim);margin-top:10px}
+
+  /* signature: the scan table */
+  .scan-card{
+    border:1.5px solid var(--ink);border-radius:8px;background:#fff;
+    box-shadow:6px 6px 0 var(--gold-soft);overflow:hidden;
+  }
+  .scan-head{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 14px;border-bottom:1.5px solid var(--ink);
+    font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;
+  }
+  .scan-head .file{color:var(--dim)}
+  .scan-head .status{color:var(--green)}
+  table.scan{width:100%;border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:12.5px}
+  table.scan th{
+    text-align:left;padding:8px 12px;border-bottom:1px solid var(--rule);
+    font-weight:600;font-size:11px;letter-spacing:.05em;color:var(--dim);text-transform:uppercase;
+  }
+  table.scan td{padding:9px 12px;border-bottom:1px solid var(--rule);white-space:nowrap}
+  table.scan tr:last-child td{border-bottom:none}
+  tr.hit{background:var(--gold-soft)}
+  tr.hit td:first-child{border-left:3px solid var(--gold)}
+  tr.miss td{color:var(--dim);text-decoration:line-through;text-decoration-color:#c8c5bc}
+  td.pos{color:var(--green);font-weight:600}
+  @media (prefers-reduced-motion:no-preference){
+    tr.hit{animation:land .5s ease-out backwards}
+    tr.hit:nth-child(2){animation-delay:.15s}
+    tr.hit:nth-child(4){animation-delay:.3s}
+    tr.hit:nth-child(6){animation-delay:.45s}
+    @keyframes land{from{background:#fff}to{background:var(--gold-soft)}}
+  }
+
+  /* sections */
+  section{padding:72px 0;border-top:1px solid var(--rule)}
+  .kicker{
+    font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;
+  }
+  h2{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:clamp(26px,3.2vw,34px);letter-spacing:-.02em;margin-bottom:14px}
+  .lead{font-size:17px;color:#3d4147;max-width:62ch}
+
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:44px}
+  .step{border-top:2px solid var(--ink);padding-top:18px}
+  .step .n{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--gold)}
+  .step h3{font-family:"Bricolage Grotesque",sans-serif;font-size:19px;margin:8px 0 8px}
+  .step p{font-size:15px;color:#3d4147}
+
+  /* get / don't get */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:40px}
+  .panel{border:1.5px solid var(--ink);border-radius:8px;padding:28px;background:#fff}
+  .panel.no{background:var(--paper);border-style:dashed;border-color:#b9b6ac}
+  .panel h3{font-family:"Bricolage Grotesque",sans-serif;font-size:18px;margin-bottom:14px}
+  .panel ul{list-style:none}
+  .panel li{padding:7px 0;font-size:15px;border-bottom:1px solid var(--rule)}
+  .panel li:last-child{border:none}
+  .panel .mono-tag{font-family:"IBM Plex Mono",monospace;font-size:13px}
+  .panel.no li{color:#5a5e63}
+  .panel.no li::before{content:"× ";color:var(--dim);font-weight:700}
+  .panel.yes li::before{content:"→ ";color:var(--gold);font-weight:700}
+
+  /* pricing */
+  .price-card{
+    max-width:520px;margin:44px auto 0;text-align:center;
+    border:2px solid var(--ink);border-radius:10px;background:#fff;
+    padding:44px 36px;box-shadow:8px 8px 0 var(--gold-soft);
+  }
+  .price-card .amount{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:56px;letter-spacing:-.03em}
+  .price-card .amount small{font-size:20px;font-weight:600;color:var(--dim)}
+  .price-card p{margin:12px 0 22px;color:#3d4147}
+  .price-card .mono{font-size:13px;color:var(--green);font-weight:600}
+
+  /* faq */
+  .faq{max-width:720px;margin-top:32px}
+  details{border-bottom:1px solid var(--rule);padding:18px 0}
+  summary{font-weight:600;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+  summary::after{content:"+";font-family:"IBM Plex Mono",monospace;color:var(--gold);font-size:18px}
+  details[open] summary::after{content:"–"}
+  details p{margin-top:12px;font-size:15px;color:#3d4147;max-width:60ch}
+
+  /* footer */
+  footer{border-top:1px solid var(--rule);padding:36px 0 48px;font-size:13px;color:var(--dim)}
+  footer .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap}
+  footer a{color:var(--dim)}
+
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+  @media (max-width:840px){
+    .hero{grid-template-columns:1fr;gap:44px;padding:52px 0 60px}
+    .steps,.split{grid-template-columns:1fr}
+    .scan-card{overflow-x:auto}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="/">List<b>Lode</b></a>
+    <a class="cta" href="#notify">Get launch access</a>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div>
+      <h1>Turn supplier price lists into <em>Amazon winners.</em></h1>
+      <p class="sub">Upload any wholesale price list — thousands of UPCs at a time. ListLode matches every product to Amazon, pulls live prices and real fees, and hands back a clean spreadsheet of the items worth selling.</p>
+      <p class="price-line">$19.99/mo · unlimited scans <span>— no tiers, no credits, no fluff</span></p>
+
+      <!-- TODO: replace YOUR_FORM_ID with your Formspree form ID (formspree.io, free tier) -->
+      <form class="capture" id="notify" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+        <label for="email" style="position:absolute;left:-9999px">Email address</label>
+        <input id="email" type="email" name="email" placeholder="you@company.com" required>
+        <button type="submit">Notify me at launch</button>
+      </form>
+      <p class="capture-note">Launching 2026. No spam — one email when it's live.</p>
+    </div>
+
+    <div class="scan-card" role="img" aria-label="Example scan: a supplier list of six products, four filtered out, two identified as profitable">
+      <div class="scan-head">
+        <span class="file">supplier_list.xlsx · 6 of 41,209 rows</span>
+        <span class="status">● scan complete</span>
+      </div>
+      <table class="scan">
+        <thead>
+          <tr><th>UPC</th><th>Buy Box</th><th>Cost</th><th>Margin</th></tr>
+        </thead>
+        <tbody>
+          <tr class="miss"><td>0 43325 88104 1</td><td>—</td><td>$61.20</td><td>no listing</td></tr>
+          <tr class="hit"><td>8 40779 16384 7</td><td>$337.89</td><td>$97.39</td><td class="pos">+56.2%</td></tr>
+          <tr class="miss"><td>0 51115 64740 6</td><td>$102.99</td><td>$102.99</td><td>−15.0%</td></tr>
+          <tr class="hit"><td>6 38060 53592 9</td><td>$316.99</td><td>$178.10</td><td class="pos">+28.8%</td></tr>
+          <tr class="miss"><td>0 21200 44581 1</td><td>$569.99</td><td>$541.00</td><td>−10.1%</td></tr>
+          <tr class="hit"><td>7 66623 42731 5</td><td>$189.00</td><td>$118.75</td><td class="pos">+22.2%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <section id="how">
+    <div class="wrap">
+      <p class="kicker">How it works</p>
+      <h2>Three steps. No babysitting.</h2>
+      <div class="steps">
+        <div class="step">
+          <span class="n mono">STEP 1</span>
+          <h3>Upload your list</h3>
+          <p>Excel, CSV, or text — straight from your supplier. Messy UPCs, EANs, case-pack GTINs, leading zeros? Cleaned automatically, with a report of exactly what we fixed.</p>
+        </div>
+        <div class="step">
+          <span class="n mono">STEP 2</span>
+          <h3>We scan it against Amazon</h3>
+          <p>Every UPC matched to its Amazon listing and enriched with live Buy Box pricing, offer counts, sales rank, and the actual referral fee — not an estimate.</p>
+        </div>
+        <div class="step">
+          <span class="n mono">STEP 3</span>
+          <h3>Download your winners</h3>
+          <p>A filtered spreadsheet of every product that clears your margin target, sorted by sales rank. You set the cost floor, margin floor, and rank ceiling.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="data">
+    <div class="wrap">
+      <p class="kicker">The data</p>
+      <h2>Everything that drives a buying decision. Nothing that doesn't.</h2>
+      <div class="split">
+        <div class="panel yes">
+          <h3>Every scanned product includes</h3>
+          <ul class="mono-tag">
+            <li>ASIN, title, brand, UPC</li>
+            <li>Your cost &amp; live Buy Box price</li>
+            <li>FBA / FBM offer counts</li>
+            <li>Current sales rank (BSR)</li>
+            <li>Real referral fee from Amazon</li>
+            <li>Net profit &amp; margin</li>
+          </ul>
+        </div>
+        <div class="panel no">
+          <h3>What we don't sell you</h3>
+          <ul class="mono-tag">
+            <li>Made-up "units per month" estimates</li>
+            <li>Credit packs and scan limits</li>
+            <li>A "Pro" tier holding useful columns hostage</li>
+            <li>Your data, aggregated and resold</li>
+          </ul>
+        </div>
+      </div>
+      <p class="lead" style="margin-top:28px">Every tool in this space converts sales rank into a "units per month" guess — sellers who compare those guesses against their own real numbers know they can be off by 4–10×. We show you the actual rank and let you judge. <strong>Honest data beats confident fiction.</strong></p>
+      <p class="lead" style="margin-top:14px"><strong>Your lists stay yours.</strong> Uploads are encrypted, raw files are deleted after processing, and your data is never aggregated, analyzed, or shared. Your supplier list is your edge — we just scan it.</p>
+    </div>
+  </section>
+
+  <section id="who">
+    <div class="wrap">
+      <p class="kicker">Who it's for</p>
+      <h2>Built for sellers who work from price lists.</h2>
+      <p class="lead">Wholesale, dropship, and online-arbitrage sellers on Amazon US. You'll need an Amazon Professional seller account — ListLode connects to it in two clicks through Amazon's official authorization (we never see your password), and every scan runs through Amazon's own Selling Partner API on your account's access. Nothing scraped, nothing stale.</p>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="wrap">
+      <p class="kicker">Pricing</p>
+      <h2 style="text-align:center">One tier. Everything included.</h2>
+      <div class="price-card">
+        <div class="amount">$19.99<small>/mo</small></div>
+        <p>Unlimited scans. Unlimited list size. Every feature.<br>Cancel anytime.</p>
+        <p class="mono">NO CREDIT PACKS · NO CAPS · NO UPSELLS</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <p class="kicker">FAQ</p>
+      <h2>Fair questions.</h2>
+      <div class="faq">
+        <details>
+          <summary>How big can my lists be?</summary>
+          <p>No limit. A 250,000-row list is fine — big scans run in the background and we email you when your results are ready.</p>
+        </details>
+        <details>
+          <summary>Where does the data come from?</summary>
+          <p>Directly from Amazon's Selling Partner API through your own authorized seller account — the same data Amazon shows sellers, in real time.</p>
+        </details>
+        <details>
+          <summary>Why is this so much cheaper than the tools I've tried?</summary>
+          <p>Because scans run through your own Amazon seller authorization, our costs don't grow with your usage — so we don't need tiers, credits, or caps. And because we skip the fluff features that don't change a buying decision.</p>
+        </details>
+        <details>
+          <summary>Do you support marketplaces outside Amazon US?</summary>
+          <p>Not at launch. US first, done properly.</p>
+        </details>
+        <details>
+          <summary>What happens to my uploaded lists?</summary>
+          <p>Processed, then the raw file is deleted. Results stay in your account until you delete them. We never share or aggregate customer data.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 ListLode · <a href="mailto:support@listlode.com">support@listlode.com</a></span>
+    <span>ListLode is an independent tool and is not affiliated with or endorsed by Amazon. Amazon and Selling Partner API are trademarks of Amazon.com, Inc.</span>
+  </div>
+</footer>
+
+</body>
+</html>
